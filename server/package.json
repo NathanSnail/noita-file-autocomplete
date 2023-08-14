@@ -1,15 +1,14 @@
 {
-	"name": "lsp-sample-server",
-	"description": "Example implementation of a language server in node.",
+	"name": "noita-file-autocomplete-server",
+	"description": "Language server for Noita File Autocomplete",
 	"version": "1.0.0",
-	"author": "Microsoft Corporation",
-	"license": "MIT",
+	"author": "Nathan",
 	"engines": {
 		"node": "*"
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+		"url": "https://github.com/Nathdsgfiugaoiysfnhuah/noita-file-autocomplete"
 	},
 	"dependencies": {
 		"vscode-languageserver": "^8.1.0",

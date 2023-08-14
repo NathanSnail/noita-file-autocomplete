@@ -58,6 +58,8 @@ connection.onInitialize((params: InitializeParams) => {
 			// Tell the client that this server supports code completion.
 			completionProvider: {
 				resolveProvider: true
+			},
+			definitionProvider: {
 			}
 		}
 	};
@@ -182,7 +184,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
 		problems++;
 		const diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
+			severity: DiagnosticSeverity.Information,
 			range: {
 				start: textDocument.positionAt(m.index),
 				end: textDocument.positionAt(m.index + m[0].length)
@@ -248,6 +250,11 @@ connection.onCompletionResolve(
 		return item;
 	}
 );
+
+connection.onDefinition(async (params) => {
+	connection.console.log("aa");
+	return null;
+});
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
