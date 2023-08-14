@@ -182,40 +182,22 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	const text = textDocument.getText();
-	const pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
-
+	const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+\.(xml|frag|lua|png)/g;
+	let match: RegExpExecArray | null;
 	let problems = 0;
 	const diagnostics: Diagnostic[] = [];
-	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
+	while ((match = pathPattern.exec(text)) !== null) {
 		problems++;
+		if (known_paths.includes(match[0] + "\"")) { continue; }
 		const diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Information,
+			severity: DiagnosticSeverity.Error,
 			range: {
-				start: textDocument.positionAt(m.index),
-				end: textDocument.positionAt(m.index + m[0].length)
+				start: textDocument.positionAt(match.index),
+				end: textDocument.positionAt(match.index + match[0].length)
 			},
-			message: `${m[0]} is all uppercase.`,
-			source: 'ex'
+			message: `${match[0]} is a path.`,
+			source: 'Noita File Autocomplete'
 		};
-		if (hasDiagnosticRelatedInformationCapability) {
-			diagnostic.relatedInformation = [
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Spelling matters'
-				},
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Particularly for names'
-				}
-			];
-		}
 		diagnostics.push(diagnostic);
 	}
 
