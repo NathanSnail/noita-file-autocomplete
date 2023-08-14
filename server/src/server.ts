@@ -182,7 +182,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	const text = textDocument.getText();
-	const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+\.(xml|frag|lua|png)/g;
+	const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)/g;
 	let match: RegExpExecArray | null;
 	let problems = 0;
 	const diagnostics: Diagnostic[] = [];
@@ -195,7 +195,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 				start: textDocument.positionAt(match.index),
 				end: textDocument.positionAt(match.index + match[0].length)
 			},
-			message: `${match[0]} is a path.`,
+			message: `${match[0]} is not a valid noita filepath.`,
 			source: 'Noita File Autocomplete'
 		};
 		diagnostics.push(diagnostic);
@@ -216,7 +216,7 @@ connection.onCompletion(
 		// The pass parameter contains the position of the text document in
 		// which code complete got requested. For the example we ignore this
 		// info and always provide the same completion items.
-		const ret = [];
+		const ret: CompletionItem[] = [];
 		for (let i = 0; i < known_paths.length; i++) {
 			ret[i] = { label: known_paths[i], kind: CompletionItemKind.Text };
 		}
@@ -233,30 +233,30 @@ connection.onCompletionResolve(
 );
 
 connection.onDefinition(
-	(params): HandlerResult<Location, void> | undefined => {
+	(params): Location[] => {
 		const currentFile = documents.get(params.textDocument.uri);
-		if (currentFile === undefined) { return undefined; }
+		if (currentFile === undefined) { return []; }
 		const lineWithRef = currentFile.getText({
 			start: { line: params.position.line, character: 0 },
 			end: { line: params.position.line + 1, character: 0 }
 		});
-		const reg = /("|')(data|mods)\/[^\n]+\.(xml|lua|png|csv)/g;
+		const reg = /("|')(data|mods)\/[^\n]+?\.(xml|lua|png|csv)/g;
 		let result;
+		const results: Location[] = [];
 		while ((result = reg.exec(lineWithRef)) !== null) {
 			const first = result.index;
 			const last = first + result[0].length - 1;
+			if (!known_paths.includes(result[0] + "\"")) { continue; }
 			const target = "file:///" + (result[0].charAt(1) == "m" ? modPath : dataPath).replace("/", "\\") + "/" + result[0].slice(result[0].indexOf("/"));
-			return {
+			results.push({
 				uri: target,
 				range: {
 					start: { line: 0, character: first },
 					end: { line: 1, character: last }
 				}
-			} as Location;
+			} as Location);
 		}
-
-
-		return undefined;
+		return results;
 	}
 );
 
