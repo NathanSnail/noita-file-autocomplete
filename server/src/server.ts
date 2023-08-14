@@ -14,7 +14,11 @@ import {
 	CompletionItemKind,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
-	InitializeResult
+	InitializeResult,
+	TextDocumentIdentifier,
+	Location,
+	Definition,
+	HandlerResult
 } from 'vscode-languageserver/node';
 
 import {
@@ -27,6 +31,8 @@ import path = require("path");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
+const modPath = path.join("D:", "Steam", "steamapps", "common", "Noita", "mods");
+const dataPath = path.join("C:", "Users", "natha", "AppData", "LocalLow", "Nolla_Games_Noita", "data");
 
 // Create a simple text document manager.
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
@@ -59,8 +65,7 @@ connection.onInitialize((params: InitializeParams) => {
 			completionProvider: {
 				resolveProvider: true
 			},
-			definitionProvider: {
-			}
+			definitionProvider: true
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -97,7 +102,8 @@ function doBase(base: string, extra: string) {
 	}
 	const replacer = new RegExp(/\\/g);
 	for (let i = 0; i < known_paths.length; i++) {
-		known_paths[i] = known_paths[i].replace(replacer, "/");
+		if (known_paths[i].charAt(0) == "\"") { continue; }
+		known_paths[i] = "\"" + known_paths[i].replace(replacer, "/") + "\"";
 	}
 }
 
@@ -111,8 +117,8 @@ connection.onInitialized(() => {
 			connection.console.log('Workspace folder change event received.');
 		});
 	}
-	doBase(path.join("C:", "Users", "natha", "AppData", "LocalLow", "Nolla_Games_Noita", "data"), "data/");
-	doBase(path.join("D:", "Steam", "steamapps", "common", "Noita", "mods"), "mods/");
+	doBase(dataPath, "data/");
+	doBase(modPath, "mods/");
 	connection.console.log("finished generating");
 });
 
@@ -240,21 +246,37 @@ connection.onCompletion(
 // the completion list.
 connection.onCompletionResolve(
 	(item: CompletionItem): CompletionItem => {
-		if (item.data === 1) {
-			item.detail = 'XML File';
-			item.documentation = 'TypeScript documentation';
-		} else if (item.data === 2) {
-			item.detail = 'Lua File';
-			item.documentation = 'JavaScript documentation';
-		}
 		return item;
 	}
 );
 
-connection.onDefinition(async (params) => {
-	connection.console.log("aa");
-	return null;
-});
+connection.onDefinition(
+	(params): HandlerResult<Location, void> | undefined => {
+		const currentFile = documents.get(params.textDocument.uri);
+		if (currentFile === undefined) { return undefined; }
+		const lineWithRef = currentFile.getText({
+			start: { line: params.position.line, character: 0 },
+			end: { line: params.position.line + 1, character: 0 }
+		});
+		const reg = /("|')(data|mods)\/[^\n]+\.(xml|lua|png|csv)/g;
+		let result;
+		while ((result = reg.exec(lineWithRef)) !== null) {
+			const first = result.index;
+			const last = first + result[0].length - 1;
+			const target = "file:///" + (result[0].charAt(1) == "m" ? modPath : dataPath).replace("/", "\\") + "/" + result[0].slice(result[0].indexOf("/"));
+			return {
+				uri: target,
+				range: {
+					start: { line: 0, character: first },
+					end: { line: 1, character: last }
+				}
+			} as Location;
+		}
+
+
+		return undefined;
+	}
+);
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
