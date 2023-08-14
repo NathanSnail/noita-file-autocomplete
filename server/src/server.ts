@@ -27,6 +27,7 @@ import {
 
 import fs = require("fs");
 import path = require("path");
+import * as vscode from 'vscode';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -120,6 +121,8 @@ connection.onInitialized(() => {
 	doBase(dataPath, "data/");
 	doBase(modPath, "mods/");
 	connection.console.log("finished generating");
+	// connection.onRequest("custom/data", param => "received parameter '" + param + "'"); // works at any time!
+	connection.sendRequest("custom/data", "Magical Wow!").then(data => console.log(data));
 });
 
 // The example settings
@@ -182,13 +185,13 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	const text = textDocument.getText();
-	const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)/g;
+	const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)"/g;
 	let match: RegExpExecArray | null;
 	let problems = 0;
 	const diagnostics: Diagnostic[] = [];
 	while ((match = pathPattern.exec(text)) !== null) {
 		problems++;
-		if (known_paths.includes(match[0] + "\"")) { continue; }
+		if (known_paths.includes(match[0])) { continue; }
 		const diagnostic: Diagnostic = {
 			severity: DiagnosticSeverity.Error,
 			range: {
@@ -220,6 +223,7 @@ connection.onCompletion(
 		for (let i = 0; i < known_paths.length; i++) {
 			ret[i] = { label: known_paths[i], kind: CompletionItemKind.Text };
 		}
+		connection.console.log("sent suggestions again");
 		return ret;
 	}
 );
