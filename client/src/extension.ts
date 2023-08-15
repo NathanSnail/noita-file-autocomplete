@@ -52,11 +52,10 @@ export function activate(context: ExtensionContext) {
 	);
 
 	config = vscode.workspace.getConfiguration("Lua"); // steal the moon
-	console.log(config.get("workspace.library"));
-	client.start();
-	// client.sendRequest("custom/data", "Magical Wow!").then(data => console.log(data));
-	// we can send requests here, and receive too!
-	client.onRequest("custom/data", param => "received parameter '" + param + "'");
+	client.onNotification("noita/dofile", (files: string[]) => {
+		handleDoFiles(files);
+	});
+	client.start(); // i think we are supposed to use a disposable thingy here but idc
 }
 
 export function deactivate(): Thenable<void> | undefined {
@@ -66,35 +65,34 @@ export function deactivate(): Thenable<void> | undefined {
 	return client.stop();
 }
 
-export function setExternalLibrary(folder: string, enable: boolean) {
-	console.log("setExternalLibrary", folder, enable);
-	const extensionId = "Nathan.noita-file-autocomplete";
-	console.log(vscode.extensions.all);
-	const extensionPath = vscode.extensions.getExtension(extensionId)?.extensionPath;
-	console.log(extensionPath);
-	const folderPath = extensionPath + "\\" + folder;
-	const config = vscode.workspace.getConfiguration("Lua");
-	const library: string[] | undefined = config.get("workspace.library");
-	if (library && extensionPath) {
-		for (let i = library.length - 1; i >= 0; i--) {
-			const el = library[i];
-			const isSelfExtension = el.indexOf(extensionId) > -1;
-			const isCurrentVersion = el.indexOf(extensionPath) > -1;
-			if (isSelfExtension && !isCurrentVersion) {
-				library.splice(i, 1);
-			}
+const known: string[] = [];
+const modPath = path.join("D:", "Steam", "steamapps", "common", "Noita", "mods");
+const dataPath = path.join("C:", "Users", "natha", "AppData", "LocalLow", "Nolla_Games_Noita", "data");
+function handleDoFiles(dofiles: string[]) {
+	console.log(config.get("workspace.library"));
+	console.log(dofiles);
+	console.log(known);
+	const marked = [];
+	for (let i = 0; i < known.length; i++) {
+		const file = known[i];
+		if (!dofiles.includes(file)) {
+			marked.push(i);
 		}
-		const index = library.indexOf(folderPath);
-		if (enable) {
-			if (index === -1) {
-				library.push(folderPath);
-			}
-		}
-		else {
-			if (index > -1) {
-				library.splice(index, 1);
-			}
-		}
-		config.update("workspace.library", library, true);
 	}
+	for (let i = 0; i < marked.length; i++) {
+		const id = marked[i] - i;
+		known.splice(id, 1);
+	}
+	for (let i = 0; i < dofiles.length; i++) {
+		const file = dofiles[i];
+		if (!known.includes(file)) {
+			known.push(file);
+		}
+	}
+	for (let i = 0; i < known.length; i++) {
+		known[i] = (known[i].charAt(1) == "m" ? modPath : dataPath) + known[i].slice(known[i].indexOf("/")).replace(/\//g, "\\");
+	}
+	console.log(known);
+	config.update("workspace.library", known, true);
+	console.log(config.get("workspace.library"));
 }

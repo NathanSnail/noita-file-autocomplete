@@ -27,7 +27,6 @@ import {
 
 import fs = require("fs");
 import path = require("path");
-import * as vscode from 'vscode';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -118,11 +117,9 @@ connection.onInitialized(() => {
 			connection.console.log('Workspace folder change event received.');
 		});
 	}
-	doBase(dataPath, "data/");
-	doBase(modPath, "mods/");
+	// doBase(dataPath, "data/");
+	// doBase(modPath, "mods/");
 	connection.console.log("finished generating");
-	// connection.onRequest("custom/data", param => "received parameter '" + param + "'"); // works at any time!
-	connection.sendRequest("custom/data", "Magical Wow!").then(data => console.log(data));
 });
 
 // The example settings
@@ -175,17 +172,25 @@ documents.onDidClose(e => {
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
+const dofilePattern = /dofile(_once)?\(\s*"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)"/g;
 documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
+	const text = change.document.getText();
+	let match: RegExpExecArray | null;
+	const dofiles = [];
+	while ((match = dofilePattern.exec(text)) !== null) {
+		dofiles.push(match[0].slice(match[0].indexOf("\""), -1));
+	}
+	connection.sendNotification("noita/dofile", dofiles);
 });
 
+const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)"/g;
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// In this simple example we get the settings for every validate run.
 	const settings = await getDocumentSettings(textDocument.uri);
 
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	const text = textDocument.getText();
-	const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)"/g;
 	let match: RegExpExecArray | null;
 	let problems = 0;
 	const diagnostics: Diagnostic[] = [];
