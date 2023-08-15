@@ -117,8 +117,8 @@ connection.onInitialized(() => {
 			connection.console.log('Workspace folder change event received.');
 		});
 	}
-	// doBase(dataPath, "data/");
-	// doBase(modPath, "mods/");
+	doBase(dataPath, "data/");
+	doBase(modPath, "mods/");
 	connection.console.log("finished generating");
 });
 
