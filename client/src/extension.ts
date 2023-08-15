@@ -94,5 +94,6 @@ function handleDoFiles(dofiles: string[]) {
 	}
 	console.log(known);
 	config.update("workspace.library", known, true);
+	config = vscode.workspace.getConfiguration("Lua");
 	console.log(config.get("workspace.library"));
 }
