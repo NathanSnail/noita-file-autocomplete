@@ -13,7 +13,7 @@ import {
 	TransportKind
 } from 'vscode-languageclient/node';
 import * as vscode from "vscode";
-
+import clipboard from 'clipboardy';
 let client: LanguageClient;
 let config;
 
@@ -58,12 +58,34 @@ export function activate(context: ExtensionContext) {
 	client.onRequest("noita/document", _ => {
 		const v = vscode.window.activeTextEditor;
 		if (v) {
-			return v.document.fileName;
+			return v.document.getText();
 		}
 		return undefined;
-		// console.log(vscode.window.activ eTextEditor.document.fileName);
 		// to[0] = vscode.window.activeTextEditor.document.fileName;
 	});
+	const disposable: vscode.Disposable = vscode.commands.registerCommand(
+		"noita-file-autocomplete.getPath",
+		(_): void => {
+			const page = vscode.window.activeTextEditor;
+			if (page === undefined) {
+				return;
+			}
+			const path = page.document.uri.toString();
+			console.log(path);
+			let done;
+			if (path.includes("mods/")) {
+				done = path.slice(path.indexOf("mods"));
+			}
+			else {
+				console.log("data");
+				done = path.slice(path.indexOf("data"));
+			}
+			console.log(done);
+			console.log("cmd!");
+			clipboard.writeSync(done);
+		}
+	);
+	context.subscriptions.push(disposable);
 	client.start(); // i think we are supposed to use a disposable thingy here but idc
 }
 
@@ -110,8 +132,6 @@ function handleDoFiles(dofiles: string[]) {
 	known.push(base);
 	if (known.sort().join('|||') !== detected.sort().join('|||')) { // hax
 		config.update("workspace.library", known, true);
-		console.log(known);
-		console.log("updated");
 	}
 	config = vscode.workspace.getConfiguration("Lua");
 }
