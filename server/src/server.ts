@@ -180,19 +180,33 @@ documents.onDidChangeContent(change => {
 	let text = "";
 	connection.sendRequest("noita/document").then(v => {
 		if (v) {
-			text = fs.readFileSync(v as string).toString();
+			text = v as string; // get current text without fs (no delay to edits)
 		}
 		else {
 			return;
 		}
+		// await strangeness means stuff runs in the wrong order if i don't do this
+		let match: RegExpExecArray | null;
+		const dofiles = [];
+		while ((match = dofilePattern.exec(text)) !== null) {
+			dofiles.push(match[0].slice(match[0].indexOf("\""), -1));
+		}
+		for (let i = 0; i < dofiles.length; i++) // mutate end only so safe
+		{
+			try {
+				const path = (dofiles[i].charAt(1) == "m" ? modPath : dataPath) + "\\" + dofiles[i].slice(dofiles[i].indexOf("/")).replace(/\//g, "\\"); // recursive dofile getter
+				const content = fs.readFileSync(path).toString();
+				while ((match = dofilePattern.exec(content)) !== null) {
+					dofiles.push(match[0].slice(match[0].indexOf("\""), -1));
+				}
+			}
+			catch
+			{
+				continue;
+			}
+		}
+		connection.sendNotification("noita/dofile", dofiles);
 	});
-	// console.log(text);
-	let match: RegExpExecArray | null;
-	const dofiles = [];
-	while ((match = dofilePattern.exec(text)) !== null) {
-		dofiles.push(match[0].slice(match[0].indexOf("\""), -1));
-	}
-	connection.sendNotification("noita/dofile", dofiles);
 });
 
 const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)"/g;
@@ -239,7 +253,7 @@ connection.onCompletion(
 		for (let i = 0; i < known_paths.length; i++) {
 			ret[i] = { label: known_paths[i], kind: CompletionItemKind.Text };
 		}
-		connection.console.log("sent suggestions again");
+		// connection.console.log("sent suggestions again");
 		return ret;
 	}
 );
