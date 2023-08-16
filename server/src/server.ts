@@ -175,9 +175,17 @@ documents.onDidClose(e => {
 const dofilePattern = /dofile(_once)?\(\s*"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)"/g;
 documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
-	const text = change.document.getText();
 	const arr: any = [];
-	connection.sendNotification("noita/document", arr).then(v => console.log(arr[0]));
+
+	let text = "";
+	connection.sendRequest("noita/document").then(v => {
+		if (v) {
+			text = fs.readFileSync(v as string).toString();
+		}
+		else {
+			return;
+		}
+	});
 	// console.log(text);
 	let match: RegExpExecArray | null;
 	const dofiles = [];

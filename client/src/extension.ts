@@ -55,8 +55,13 @@ export function activate(context: ExtensionContext) {
 	client.onNotification("noita/dofile", (files: string[]) => {
 		handleDoFiles(files);
 	});
-	client.onNotification("noita/document", (to) => {
-		// console.log(vscode.window.activeTextEditor.document.fileName);
+	client.onRequest("noita/document", _ => {
+		const v = vscode.window.activeTextEditor;
+		if (v) {
+			return v.document.fileName;
+		}
+		return undefined;
+		// console.log(vscode.window.activ eTextEditor.document.fileName);
 		// to[0] = vscode.window.activeTextEditor.document.fileName;
 	});
 	client.start(); // i think we are supposed to use a disposable thingy here but idc
