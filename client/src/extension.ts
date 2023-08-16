@@ -55,6 +55,10 @@ export function activate(context: ExtensionContext) {
 	client.onNotification("noita/dofile", (files: string[]) => {
 		handleDoFiles(files);
 	});
+	client.onNotification("noita/document", (to) => {
+		// console.log(vscode.window.activeTextEditor.document.fileName);
+		// to[0] = vscode.window.activeTextEditor.document.fileName;
+	});
 	client.start(); // i think we are supposed to use a disposable thingy here but idc
 }
 
@@ -68,10 +72,16 @@ export function deactivate(): Thenable<void> | undefined {
 const known: string[] = [];
 const modPath = path.join("D:", "Steam", "steamapps", "common", "Noita", "mods");
 const dataPath = path.join("C:", "Users", "natha", "AppData", "LocalLow", "Nolla_Games_Noita", "data");
+let base = "";
 function handleDoFiles(dofiles: string[]) {
-	console.log(config.get("workspace.library"));
-	console.log(dofiles);
-	console.log(known);
+	config = vscode.workspace.getConfiguration("Lua");
+	const detected = config.get("workspace.library");
+	for (let i = 0; i < detected.length; i++) {
+		if (detected[i].includes("evaisa")) // a small amount of tomfoolery
+		{
+			base = detected[i];
+		}
+	}
 	const marked = [];
 	for (let i = 0; i < known.length; i++) {
 		const file = known[i];
@@ -92,8 +102,11 @@ function handleDoFiles(dofiles: string[]) {
 	for (let i = 0; i < known.length; i++) {
 		known[i] = (known[i].charAt(1) == "m" ? modPath : dataPath) + known[i].slice(known[i].indexOf("/")).replace(/\//g, "\\");
 	}
-	console.log(known);
-	config.update("workspace.library", known, true);
+	known.push(base);
+	if (known.sort().join('|||') !== detected.sort().join('|||')) { // hax
+		config.update("workspace.library", known, true);
+		console.log(known);
+		console.log("updated");
+	}
 	config = vscode.workspace.getConfiguration("Lua");
-	console.log(config.get("workspace.library"));
 }
