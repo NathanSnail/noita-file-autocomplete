@@ -176,6 +176,9 @@ const dofilePattern = /dofile(_once)?\(\s*"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|
 documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
 	const text = change.document.getText();
+	const arr: any = [];
+	connection.sendNotification("noita/document", arr).then(v => console.log(arr[0]));
+	// console.log(text);
 	let match: RegExpExecArray | null;
 	const dofiles = [];
 	while ((match = dofilePattern.exec(text)) !== null) {
