@@ -13,7 +13,6 @@ import {
 	TransportKind
 } from 'vscode-languageclient/node';
 import * as vscode from "vscode";
-import clipboard from 'clipboardy';
 let client: LanguageClient;
 let config;
 
@@ -82,7 +81,7 @@ export function activate(context: ExtensionContext) {
 			}
 			console.log(done);
 			console.log("cmd!");
-			clipboard.writeSync(done);
+			vscode.env.clipboard.writeText(done);
 		}
 	);
 	context.subscriptions.push(disposable);
