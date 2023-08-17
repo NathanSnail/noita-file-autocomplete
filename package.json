@@ -14,31 +14,25 @@
 	"activationEvents": [
 		"onLanguage:plaintext",
 		"onLanguage:lua",
-		"onLanguage:xml",
-		"onCommand:noita-file-autocomplete.getPath"
+		"onLanguage:xml"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "Example configuration",
+			"title": "Noita File Autocomplete",
 			"properties": {
-				"languageServerExample.maxNumberOfProblems": {
+				"noita-file-autocomplete.modPath": {
 					"scope": "resource",
-					"type": "number",
-					"default": 100,
-					"description": "Controls the maximum number of problems produced by the server."
-				},
-				"languageServerExample.trace.server": {
-					"scope": "window",
 					"type": "string",
-					"enum": [
-						"off",
-						"messages",
-						"verbose"
-					],
-					"default": "off",
-					"description": "Traces the communication between VS Code and the language server."
+					"default": "D:\\Steam\\steamapps\\common\\Noita\\mods",
+					"description": "The path to the mods folder."
+				},
+				"noita-file-autocomplete.dataPath": {
+					"scope": "resource",
+					"type": "string",
+					"default": "C:\\Users\\natha\\AppData\\LocalLow\\Nolla_Games_Noita\\data",
+					"description": "The path to the data folder."
 				}
 			}
 		},
