@@ -15,6 +15,8 @@ import {
 import * as vscode from "vscode";
 let client: LanguageClient;
 let config;
+let modPath = path.join("D:", "Steam", "steamapps", "common", "Noita", "mods");
+let dataPath = path.join("C:", "Users", "natha", "AppData", "LocalLow", "Nolla_Games_Noita", "data");
 
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
@@ -62,7 +64,7 @@ export function activate(context: ExtensionContext) {
 		return undefined;
 		// to[0] = vscode.window.activeTextEditor.document.fileName;
 	});
-	const disposable: vscode.Disposable = vscode.commands.registerCommand(
+	const commands: vscode.Disposable = vscode.commands.registerCommand(
 		"noita-file-autocomplete.getPath",
 		(_): void => {
 			const page = vscode.window.activeTextEditor;
@@ -70,21 +72,25 @@ export function activate(context: ExtensionContext) {
 				return;
 			}
 			const path = page.document.uri.toString();
-			console.log(path);
 			let done;
 			if (path.includes("mods/")) {
 				done = path.slice(path.indexOf("mods"));
 			}
 			else {
-				console.log("data");
 				done = path.slice(path.indexOf("data"));
 			}
-			console.log(done);
-			console.log("cmd!");
 			vscode.env.clipboard.writeText(done);
 		}
 	);
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(commands);
+	client.onRequest("noita/config", _ => {
+		dataPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("dataPath");
+		modPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("modPath");
+		return [dataPath, modPath];
+		// to[0] = vscode.window.activeTextEditor.document.fileName;
+	});
+	dataPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("dataPath");
+	modPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("modPath");
 	client.start(); // i think we are supposed to use a disposable thingy here but idc
 }
 
@@ -96,8 +102,6 @@ export function deactivate(): Thenable<void> | undefined {
 }
 
 const known: string[] = [];
-const modPath = path.join("D:", "Steam", "steamapps", "common", "Noita", "mods");
-const dataPath = path.join("C:", "Users", "natha", "AppData", "LocalLow", "Nolla_Games_Noita", "data");
 let base = "";
 function handleDoFiles(dofiles: string[]) {
 	config = vscode.workspace.getConfiguration("Lua");

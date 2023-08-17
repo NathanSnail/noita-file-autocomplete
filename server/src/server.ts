@@ -31,8 +31,8 @@ import path = require("path");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
-const modPath = path.join("D:", "Steam", "steamapps", "common", "Noita", "mods");
-const dataPath = path.join("C:", "Users", "natha", "AppData", "LocalLow", "Nolla_Games_Noita", "data");
+let modPath = path.join("D:", "Steam", "steamapps", "common", "Noita", "mods");
+let dataPath = path.join("C:", "Users", "natha", "AppData", "LocalLow", "Nolla_Games_Noita", "data");
 
 // Create a simple text document manager.
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
@@ -117,9 +117,14 @@ connection.onInitialized(() => {
 			connection.console.log('Workspace folder change event received.');
 		});
 	}
-	doBase(dataPath, "data/");
-	doBase(modPath, "mods/");
-	connection.console.log("finished generating");
+	connection.sendRequest("noita/config").then(v => {
+		console.log(v);
+		doConf(v as string[]);
+		doBase(dataPath, "data/");
+		doBase(modPath, "mods/");
+		connection.console.log("Noita File Autocomplete: Finished generating.");
+	}
+	);
 });
 
 // The example settings
@@ -131,22 +136,22 @@ interface ExampleSettings {
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
 const defaultSettings: ExampleSettings = { maxNumberOfProblems: 1000 };
-let globalSettings: ExampleSettings = defaultSettings;
+const globalSettings: ExampleSettings = defaultSettings;
 
 // Cache the settings of all open documents
 const documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
 
-connection.onDidChangeConfiguration(change => {
-	if (hasConfigurationCapability) {
-		// Reset all cached document settings
-		documentSettings.clear();
-	} else {
-		globalSettings = <ExampleSettings>(
-			(change.settings.languageServerExample || defaultSettings)
-		);
-	}
+function doConf(v: string[]) {
+	dataPath = (v)[0];
+	modPath = (v)[0];
 
-	// Revalidate all open text documents
+}
+
+connection.onDidChangeConfiguration(_change => {
+	connection.sendRequest("noita/document").then(v => {
+		doConf(v as string[]);
+	}
+	);
 	documents.all().forEach(validateTextDocument);
 });
 
