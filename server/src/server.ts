@@ -127,6 +127,12 @@ connection.onInitialized(() => {
 	);
 });
 
+// connection.onDidSaveTextDocument((document) => {
+// 	connection.console.log("!!");
+// 	connection.console.log(document.textDocument.uri);
+// });
+
+
 // The example settings
 interface ExampleSettings {
 	maxNumberOfProblems: number;
@@ -143,7 +149,7 @@ const documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
 
 function doConf(v: string[]) {
 	dataPath = (v)[0];
-	modPath = (v)[0];
+	modPath = (v)[1];
 
 }
 
