@@ -14,7 +14,8 @@
 	"activationEvents": [
 		"onLanguage:plaintext",
 		"onLanguage:lua",
-		"onLanguage:xml"
+		"onLanguage:xml",
+		""
 	],
 	"main": "./client/out/extension",
 	"contributes": {
