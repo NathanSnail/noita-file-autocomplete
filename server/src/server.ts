@@ -156,6 +156,10 @@ connection.onInitialized(() => {
 
 function doConf(v: string[]) {
 	dataPath = (v)[0];
+	if (dataPath == "C:\\Path\\To\\Noita\\data")
+	{
+		dataPath = process.env.APPDATA?.split("\\").slice(0,-1).join("\\") + "\\LocalLow\\Nolla_Games_Noita\\data";
+	}
 	modPath = (v)[1];
 }
 
