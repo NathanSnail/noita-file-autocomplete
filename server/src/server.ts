@@ -240,7 +240,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 				start: textDocument.positionAt(match.index),
 				end: textDocument.positionAt(match.index + match[0].length)
 			},
-			message: (`${match[0]} is not a ` + (bad ? "valid" : "known") + ` noita filepath.`),
+			message: (`${match[0]} is not a ` + (bad ? "valid" : "known") + ` Noita filepath.`),
 			source: 'Noita File Autocomplete'
 		};
 		diagnostics.push(diagnostic);
