@@ -146,7 +146,6 @@ connection.onInitialized(() => {
 		}
 	});
 	connection.sendRequest("noita/config").then(v => {
-		console.log(v);
 		doConf(v as string[]);
 		doBase(dataPath, "data/");
 		doBase(modPath, "mods/");
@@ -158,11 +157,10 @@ connection.onInitialized(() => {
 function doConf(v: string[]) {
 	dataPath = (v)[0];
 	modPath = (v)[1];
-
 }
 
 connection.onDidChangeConfiguration(_change => {
-	connection.sendRequest("noita/document").then(v => {
+	connection.sendRequest("noita/config").then(v => {
 		doConf(v as string[]);
 	}
 	);
@@ -228,8 +226,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		if (match[0].startsWith("\"mods/")) {
 			const mod_name = match[0].slice(0, match[0].slice(6).indexOf("/") + 6); // "1m2o3d4s5/6
 			known_paths.forEach(element => {
-				if (element.startsWith(mod_name))
-				{
+				if (element.startsWith(mod_name)) {
 					bad = true;
 				}
 			});
@@ -289,7 +286,7 @@ connection.onDefinition(
 			const first = result.index;
 			const last = first + result[0].length - 1;
 			if (!known_paths.includes(result[0] + "\"")) { continue; }
-			const target = "file:///" + (result[0].charAt(1) == "m" ? modPath : dataPath).replace("/", "\\") + "/" + result[0].slice(result[0].indexOf("/"));
+			const target = "file:///" + (result[0].charAt(1) == "m" ? modPath : dataPath) + "/" + result[0].slice(result[0].indexOf("/"));
 			results.push({
 				uri: target,
 				range: {
