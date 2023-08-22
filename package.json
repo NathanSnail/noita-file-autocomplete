@@ -30,7 +30,7 @@
 				"noita-file-autocomplete.dataPath": {
 					"scope": "resource",
 					"type": "string",
-					"default": "C:\\Users\\natha\\AppData\\LocalLow\\Nolla_Games_Noita\\data",
+					"default": "C:\\Path\\To\\Noita\\data",
 					"description": "The path to the data folder."
 				}
 			}
