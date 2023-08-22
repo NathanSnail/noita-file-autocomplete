@@ -40,7 +40,7 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
-const known_paths: string[] = [];
+let known_paths: string[] = [];
 connection.onInitialize((params: InitializeParams) => {
 	const capabilities = params.capabilities;
 
@@ -117,6 +117,34 @@ connection.onInitialized(() => {
 			connection.console.log('Workspace folder change event received.');
 		});
 	}
+	connection.onNotification("noita/filesaved", (uri: string) => {
+		if (uri.slice(1).toLowerCase().startsWith(dataPath.toLowerCase().split(/\\/).join("/"))) {
+			const stripped: string = "\"" + uri.slice(uri.indexOf("data")) + "\"";
+			if (!known_paths.includes(stripped)) {
+				known_paths.push(stripped);
+			}
+		}
+		else if (uri.slice(1).toLowerCase().startsWith(modPath.toLowerCase().split(/\\/).join("/"))) {
+			const stripped: string = "\"" + uri.slice(uri.indexOf("mods")) + "\"";
+			if (!known_paths.includes(stripped)) {
+				known_paths.push(stripped);
+			}
+		}
+	});
+	connection.onNotification("noita/filedeleted", (uri: string) => {
+		if (uri.slice(1).toLowerCase().startsWith(dataPath.toLowerCase().split(/\\/).join("/"))) {
+			const stripped: string = "\"" + uri.slice(uri.indexOf("data")) + "\"";
+			if (known_paths.includes(stripped)) {
+				known_paths = known_paths.filter(e => e !== stripped);
+			}
+		}
+		else if (uri.slice(1).toLowerCase().startsWith(modPath.toLowerCase().split(/\\/).join("/"))) {
+			const stripped: string = "\"" + uri.slice(uri.indexOf("mods")) + "\"";
+			if (known_paths.includes(stripped)) {
+				known_paths = known_paths.filter(e => e !== stripped);
+			}
+		}
+	});
 	connection.sendRequest("noita/config").then(v => {
 		console.log(v);
 		doConf(v as string[]);

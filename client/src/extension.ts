@@ -83,6 +83,15 @@ export function activate(context: ExtensionContext) {
 		}
 	);
 	context.subscriptions.push(commands);
+	context.subscriptions.push(vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => { // created or edited
+		client.sendNotification("noita/filesaved", document.uri.path);
+	}));
+	context.subscriptions.push(vscode.workspace.onDidDeleteFiles((event: vscode.FileDeleteEvent) => { // created or edited
+		// client.sendNotification("noita/filesaved", even);
+		event.files.forEach(file => { // eldritch spell (foreach)
+			client.sendNotification("noita/filedeleted", file.path);
+		});
+	}));
 	client.onRequest("noita/config", _ => {
 		dataPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("dataPath");
 		modPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("modPath");
@@ -138,3 +147,4 @@ function handleDoFiles(dofiles: string[]) {
 	}
 	config = vscode.workspace.getConfiguration("Lua");
 }
+
