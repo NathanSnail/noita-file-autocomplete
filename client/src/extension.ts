@@ -98,6 +98,10 @@ export function activate(context: ExtensionContext) {
 		return [dataPath, modPath];
 		// to[0] = vscode.window.activeTextEditor.document.fileName;
 	});
+	client.onNotification("noita/paths", (v: string[]) => {
+		dataPath = v[0];
+		modPath = v[1];
+	});
 	dataPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("dataPath");
 	modPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("modPath");
 	client.start(); // i think we are supposed to use a disposable thingy here but idc

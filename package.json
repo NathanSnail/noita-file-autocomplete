@@ -24,7 +24,7 @@
 				"noita-file-autocomplete.modPath": {
 					"scope": "resource",
 					"type": "string",
-					"default": "D:\\Steam\\steamapps\\common\\Noita\\mods",
+					"default": "C:\\Path\\To\\Noita\\mods",
 					"description": "The path to the mods folder."
 				},
 				"noita-file-autocomplete.dataPath": {
