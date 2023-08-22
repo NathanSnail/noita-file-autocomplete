@@ -3,6 +3,7 @@
 	"description": "Language server for Noita File Autocomplete",
 	"version": "1.0.0",
 	"author": "Nathan",
+	"publisher": "Nathansnail",
 	"engines": {
 		"node": "*"
 	},
