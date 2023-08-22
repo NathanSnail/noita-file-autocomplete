@@ -213,11 +213,17 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// Create incorrect path errors
 	const text = textDocument.getText();
 	let match: RegExpExecArray | null;
-	let problems = 0;
 	const diagnostics: Diagnostic[] = [];
 	while ((match = pathPattern.exec(text)) !== null) {
-		problems++;
+		let found = false;
 		if (known_paths.includes(match[0])) { continue; }
+		known_paths.forEach(e => {
+			if (match === null) { return; } // stupid typescript
+			if (e.endsWith(match[0].slice(1))) { // no starting quote
+				found = true;
+			}
+		});
+		if (found) { continue; }
 		const diagnostic: Diagnostic = {
 			severity: DiagnosticSeverity.Error,
 			range: {
