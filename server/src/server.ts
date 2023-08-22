@@ -31,8 +31,8 @@ import path = require("path");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
-let modPath = path.join("D:", "Steam", "steamapps", "common", "Noita", "mods");
-let dataPath = path.join("C:", "Users", "natha", "AppData", "LocalLow", "Nolla_Games_Noita", "data");
+let modPath = "C:\\Path\\To\\Noita\\mods";
+let dataPath = "C:\\Path\\To\\Noita\\data";
 
 // Create a simple text document manager.
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
@@ -107,16 +107,12 @@ function doBase(base: string, extra: string) {
 	}
 }
 
-connection.onInitialized(() => {
+connection.onInitialized(async () => {
 	if (hasConfigurationCapability) {
 		// Register for all configuration changes.
 		connection.client.register(DidChangeConfigurationNotification.type, undefined);
 	}
-	if (hasWorkspaceFolderCapability) {
-		connection.workspace.onDidChangeWorkspaceFolders(_event => {
-			connection.console.log('Workspace folder change event received.');
-		});
-	}
+	if (await CheckModDir()) { return; }
 	connection.onNotification("noita/filesaved", (uri: string) => {
 		if (uri.slice(1).toLowerCase().startsWith(dataPath.toLowerCase().split(/\\/).join("/"))) {
 			const stripped: string = "\"" + uri.slice(uri.indexOf("data")) + "\"";
@@ -145,8 +141,8 @@ connection.onInitialized(() => {
 			}
 		}
 	});
-	connection.sendRequest("noita/config").then(v => {
-		doConf(v as string[]);
+	connection.sendRequest("noita/config").then(async v => {
+		await doConf(v as string[]);
 		doBase(dataPath, "data/");
 		doBase(modPath, "mods/");
 		connection.console.log("Noita File Autocomplete: Finished generating.");
@@ -154,18 +150,19 @@ connection.onInitialized(() => {
 	);
 });
 
-function doConf(v: string[]) {
+async function doConf(v: string[]) {
 	dataPath = (v)[0];
-	if (dataPath == "C:\\Path\\To\\Noita\\data")
-	{
-		dataPath = process.env.APPDATA?.split("\\").slice(0,-1).join("\\") + "\\LocalLow\\Nolla_Games_Noita\\data";
+	if (dataPath == "C:\\Path\\To\\Noita\\data") {
+		dataPath = process.env.APPDATA?.split("\\").slice(0, -1).join("\\") + "\\LocalLow\\Nolla_Games_Noita\\data";
 	}
 	modPath = (v)[1];
+	await connection.sendNotification("noita/paths", [dataPath, modPath]);
 }
 
-connection.onDidChangeConfiguration(_change => {
-	connection.sendRequest("noita/config").then(v => {
-		doConf(v as string[]);
+connection.onDidChangeConfiguration(async _change => {
+	if (await CheckModDir()) { return; }
+	await connection.sendRequest("noita/config").then(async v => {
+		await doConf(v as string[]);
 	}
 	);
 	documents.all().forEach(validateTextDocument);
@@ -174,7 +171,8 @@ connection.onDidChangeConfiguration(_change => {
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 const dofilePattern = /dofile(_once)?\(\s*"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)"/g;
-documents.onDidChangeContent(change => {
+documents.onDidChangeContent(async change => {
+	if (await CheckModDir()) { return; }
 	validateTextDocument(change.document);
 	const arr: any = [];
 
@@ -212,6 +210,7 @@ documents.onDidChangeContent(change => {
 
 const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)"/g;
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
+	if (await CheckModDir()) { return; }
 	// Create incorrect path errors
 	const text = textDocument.getText();
 	let match: RegExpExecArray | null;
@@ -251,14 +250,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
-connection.onDidChangeWatchedFiles(_change => {
-	// Monitored files have change in VSCode
-	connection.console.log('We received an file change event');
-});
-
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
+	async (_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]> => {
+		if (await CheckModDir()) { return []; }
 		const ret: CompletionItem[] = []; // send completions, ideally we could cache this on client but idk how
 		for (let i = 0; i < known_paths.length; i++) {
 			ret[i] = { label: known_paths[i], kind: CompletionItemKind.Text };
@@ -276,7 +271,8 @@ connection.onCompletionResolve(
 );
 
 connection.onDefinition(
-	(params): Location[] => {
+	async (params): Promise<Location[]> => {
+		if (await CheckModDir()) { return []; }
 		const currentFile = documents.get(params.textDocument.uri);
 		if (currentFile === undefined) { return []; }
 		const lineWithRef = currentFile.getText({
@@ -302,6 +298,17 @@ connection.onDefinition(
 		return results;
 	}
 );
+
+function CheckModDir() {
+	return connection.sendRequest("noita/config").then(async (v) => {
+		await doConf(v as string[]);
+		if (modPath === "C:\\Path\\To\\Noita\\mods") {
+			connection.window.showErrorMessage("Set your mod path then restart!");
+			return true;
+		}
+		return false;
+	});
+}
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
