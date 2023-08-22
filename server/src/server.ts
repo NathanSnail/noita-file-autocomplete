@@ -155,26 +155,6 @@ connection.onInitialized(() => {
 	);
 });
 
-// connection.onDidSaveTextDocument((document) => {
-// 	connection.console.log("!!");
-// 	connection.console.log(document.textDocument.uri);
-// });
-
-
-// The example settings
-interface ExampleSettings {
-	maxNumberOfProblems: number;
-}
-
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
-const defaultSettings: ExampleSettings = { maxNumberOfProblems: 1000 };
-const globalSettings: ExampleSettings = defaultSettings;
-
-// Cache the settings of all open documents
-const documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
-
 function doConf(v: string[]) {
 	dataPath = (v)[0];
 	modPath = (v)[1];
@@ -187,26 +167,6 @@ connection.onDidChangeConfiguration(_change => {
 	}
 	);
 	documents.all().forEach(validateTextDocument);
-});
-
-function getDocumentSettings(resource: string): Thenable<ExampleSettings> {
-	if (!hasConfigurationCapability) {
-		return Promise.resolve(globalSettings);
-	}
-	let result = documentSettings.get(resource);
-	if (!result) {
-		result = connection.workspace.getConfiguration({
-			scopeUri: resource,
-			section: 'languageServerExample'
-		});
-		documentSettings.set(resource, result);
-	}
-	return result;
-}
-
-// Only keep settings for open documents
-documents.onDidClose(e => {
-	documentSettings.delete(e.document.uri);
 });
 
 // The content of a text document has changed. This event is emitted
@@ -250,10 +210,7 @@ documents.onDidChangeContent(change => {
 
 const pathPattern = /"((mods\/[a-z|_|0-9]+)|data)\/([a-z|_|0-9]+\/){1,}[a-z|_|0-9]+?\.(xml|frag|lua|png)"/g;
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-	// In this simple example we get the settings for every validate run.
-	const settings = await getDocumentSettings(textDocument.uri);
-
-	// The validator creates diagnostics for all uppercase words length 2 and more
+	// Create incorrect path errors
 	const text = textDocument.getText();
 	let match: RegExpExecArray | null;
 	let problems = 0;
@@ -285,14 +242,10 @@ connection.onDidChangeWatchedFiles(_change => {
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
 	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The pass parameter contains the position of the text document in
-		// which code complete got requested. For the example we ignore this
-		// info and always provide the same completion items.
-		const ret: CompletionItem[] = [];
+		const ret: CompletionItem[] = []; // send completions, ideally we could cache this on client but idk how
 		for (let i = 0; i < known_paths.length; i++) {
 			ret[i] = { label: known_paths[i], kind: CompletionItemKind.Text };
 		}
-		// connection.console.log("sent suggestions again");
 		return ret;
 	}
 );
