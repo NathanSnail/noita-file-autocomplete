@@ -224,13 +224,23 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 			}
 		});
 		if (found) { continue; }
+		let bad = false;
+		if (match[0].startsWith("\"mods/")) {
+			const mod_name = match[0].slice(0, match[0].slice(6).indexOf("/") + 6); // "1m2o3d4s5/6
+			known_paths.forEach(element => {
+				if (element.startsWith(mod_name))
+				{
+					bad = true;
+				}
+			});
+		}
 		const diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Error,
+			severity: bad ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
 			range: {
 				start: textDocument.positionAt(match.index),
 				end: textDocument.positionAt(match.index + match[0].length)
 			},
-			message: `${match[0]} is not a valid noita filepath.`,
+			message: (`${match[0]} is not a ` + (bad ? "valid" : "known") + ` noita filepath.`),
 			source: 'Noita File Autocomplete'
 		};
 		diagnostics.push(diagnostic);
