@@ -2,7 +2,6 @@
 	"name": "noita-file-autocomplete-client",
 	"description": "Client for Noita File Autocomplete",
 	"author": "Nathan",
-	"publisher": "Nathan",
 	"version": "0.0.1",
 	"repository": {
 		"type": "git",
