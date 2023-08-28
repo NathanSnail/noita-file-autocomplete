@@ -85,7 +85,7 @@ function doBase(base: string, extra: string) {
 
 		const next = traverse_paths[0];
 		if (fs.lstatSync(path.join(base, next)).isFile()) {
-			known_paths.push(path.join(extra, next));
+			known_paths.push(path.join(extra, next).toLowerCase());
 			traverse_paths.shift();
 			continue;
 		}
@@ -116,28 +116,28 @@ connection.onInitialized(async () => {
 	connection.onNotification("noita/filesaved", (uri: string) => {
 		if (uri.slice(1).toLowerCase().startsWith(dataPath.toLowerCase().split(/\\/).join("/"))) {
 			const stripped: string = "\"" + uri.slice(uri.indexOf("data")) + "\"";
-			if (!known_paths.includes(stripped)) {
-				known_paths.push(stripped);
+			if (!known_paths.includes(stripped.toLowerCase())) {
+				known_paths.push(stripped.toLowerCase());
 			}
 		}
 		else if (uri.slice(1).toLowerCase().startsWith(modPath.toLowerCase().split(/\\/).join("/"))) {
 			const stripped: string = "\"" + uri.slice(uri.indexOf("mods")) + "\"";
-			if (!known_paths.includes(stripped)) {
-				known_paths.push(stripped);
+			if (!known_paths.includes(stripped.toLowerCase())) {
+				known_paths.push(stripped.toLowerCase());
 			}
 		}
 	});
 	connection.onNotification("noita/filedeleted", (uri: string) => {
 		if (uri.slice(1).toLowerCase().startsWith(dataPath.toLowerCase().split(/\\/).join("/"))) {
 			const stripped: string = "\"" + uri.slice(uri.indexOf("data")) + "\"";
-			if (known_paths.includes(stripped)) {
-				known_paths = known_paths.filter(e => e !== stripped);
+			if (known_paths.includes(stripped.toLowerCase())) {
+				known_paths = known_paths.filter(e => e !== stripped.toLowerCase());
 			}
 		}
 		else if (uri.slice(1).toLowerCase().startsWith(modPath.toLowerCase().split(/\\/).join("/"))) {
 			const stripped: string = "\"" + uri.slice(uri.indexOf("mods")) + "\"";
-			if (known_paths.includes(stripped)) {
-				known_paths = known_paths.filter(e => e !== stripped);
+			if (known_paths.includes(stripped.toLowerCase())) {
+				known_paths = known_paths.filter(e => e !== stripped.toLowerCase());
 			}
 		}
 	});
@@ -217,7 +217,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	const diagnostics: Diagnostic[] = [];
 	while ((match = pathPattern.exec(text)) !== null) {
 		let found = false;
-		if (known_paths.includes(match[0])) { continue; }
+		if (known_paths.includes(match[0].toLowerCase())) { continue; }
 		known_paths.forEach(e => {
 			if (match === null) { return; } // stupid typescript
 			if (e.endsWith(match[0].slice(1))) { // no starting quote
@@ -227,7 +227,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		if (found) { continue; }
 		let bad = false;
 		if (match[0].startsWith("\"mods/")) {
-			const mod_name = match[0].slice(0, match[0].slice(6).indexOf("/") + 6); // "1m2o3d4s5/6
+			const mod_name = match[0].slice(0, match[0].slice(6).indexOf("/") + 6).toLowerCase(); // "1m2o3d4s5/6
 			known_paths.forEach(element => {
 				if (element.startsWith(mod_name)) {
 					bad = true;
@@ -285,7 +285,7 @@ connection.onDefinition(
 		while ((result = reg.exec(lineWithRef)) !== null) {
 			const first = result.index;
 			const last = first + result[0].length - 1;
-			if (!known_paths.includes(result[0] + "\"")) { continue; }
+			if (!known_paths.includes(result[0].toLowerCase() + "\"")) { continue; }
 			const target = "file:///" + (result[0].charAt(1) == "m" ? modPath : dataPath) + "/" + result[0].slice(result[0].indexOf("/"));
 			results.push({
 				uri: target,
