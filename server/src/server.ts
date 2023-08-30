@@ -30,9 +30,12 @@ import path = require("path");
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
+
 const connection = createConnection(ProposedFeatures.all);
 let modPath = "C:\\Path\\To\\Noita\\mods";
 let dataPath = "C:\\Path\\To\\Noita\\data";
+let linux = false;
+let suggestions = true;
 
 // Create a simple text document manager.
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
@@ -142,7 +145,7 @@ connection.onInitialized(async () => {
 		}
 	});
 	connection.sendRequest("noita/config").then(async v => {
-		await doConf(v as string[]);
+		await doConf([(v as string[])[0], (v as string[])[1]], [(v as boolean[])[2], (v as boolean[])[3]]);
 		doBase(dataPath, "data/");
 		doBase(modPath, "mods/");
 		connection.console.log("Noita File Autocomplete: Finished generating.");
@@ -150,19 +153,21 @@ connection.onInitialized(async () => {
 	);
 });
 
-async function doConf(v: string[]) {
+async function doConf(v: string[], b: boolean[]) {
 	dataPath = (v)[0];
 	if (dataPath == "C:\\Path\\To\\Noita\\data") {
 		dataPath = process.env.APPDATA?.split("\\").slice(0, -1).join("\\") + "\\LocalLow\\Nolla_Games_Noita\\data";
 	}
 	modPath = (v)[1];
+	linux = (b)[0];
+	suggestions = (b)[1];
 	await connection.sendNotification("noita/paths", [dataPath, modPath]);
 }
 
 connection.onDidChangeConfiguration(async _change => {
 	if (await CheckModDir()) { return; }
 	await connection.sendRequest("noita/config").then(async v => {
-		await doConf(v as string[]);
+		await doConf([(v as string[])[0], (v as string[])[1]], [(v as boolean[])[2], (v as boolean[])[3]]);
 	}
 	);
 	documents.all().forEach(validateTextDocument);
@@ -193,7 +198,7 @@ documents.onDidChangeContent(async change => {
 		for (let i = 0; i < dofiles.length; i++) // mutate end only so safe
 		{
 			try {
-				const path = (dofiles[i].charAt(1) == "m" ? modPath : dataPath) + "\\" + dofiles[i].slice(dofiles[i].indexOf("/")).replace(/\//g, "\\"); // recursive dofile getter
+				const path = (dofiles[i].charAt(1) == "m" ? modPath : dataPath) + "/" + dofiles[i].slice(dofiles[i].indexOf("/")); // recursive dofile getter
 				const content = fs.readFileSync(path).toString();
 				while ((match = dofilePattern.exec(content)) !== null) {
 					dofiles.push(match[0].slice(match[0].indexOf("\""), -1));
@@ -253,6 +258,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
 	async (_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]> => {
+		if (!suggestions) { return []; }
 		if (await CheckModDir()) { return []; }
 		const ret: CompletionItem[] = []; // send completions, ideally we could cache this on client but idk how
 		for (let i = 0; i < known_paths.length; i++) {
@@ -286,7 +292,7 @@ connection.onDefinition(
 			const first = result.index;
 			const last = first + result[0].length - 1;
 			if (!known_paths.includes(result[0].toLowerCase() + "\"")) { continue; }
-			const target = "file:///" + (result[0].charAt(1) == "m" ? modPath : dataPath) + "/" + result[0].slice(result[0].indexOf("/"));
+			const target = (linux ? "file://" : "file:///") + (result[0].charAt(1) == "m" ? modPath : dataPath) + result[0].slice(result[0].indexOf("/"));
 			results.push({
 				uri: target,
 				range: {
@@ -301,7 +307,7 @@ connection.onDefinition(
 
 function CheckModDir() {
 	return connection.sendRequest("noita/config").then(async (v) => {
-		await doConf(v as string[]);
+		await doConf([(v as string[])[0], (v as string[])[1]], [(v as boolean[])[2], (v as boolean[])[3]]);
 		if (modPath === "C:\\Path\\To\\Noita\\mods") {
 			connection.window.showErrorMessage("Set your mod path then restart!");
 			return true;

@@ -32,6 +32,18 @@
 					"type": "string",
 					"default": "C:\\Path\\To\\Noita\\data",
 					"description": "The path to the data folder."
+				},
+				"noita-file-autocomplete.linux": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": false,
+					"description": "Use linux mode (experimental)."
+				},
+				"noita-file-autocomplete.suggestions": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Provide suggestions"
 				}
 			}
 		},
