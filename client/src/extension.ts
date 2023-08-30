@@ -95,7 +95,7 @@ export function activate(context: ExtensionContext) {
 	client.onRequest("noita/config", _ => {
 		dataPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("dataPath");
 		modPath = vscode.workspace.getConfiguration("noita-file-autocomplete").get("modPath");
-		return [dataPath, modPath];
+		return [dataPath, modPath, vscode.workspace.getConfiguration("noita-file-autocomplete").get("linux"), vscode.workspace.getConfiguration("noita-file-autocomplete").get("suggestions")];
 		// to[0] = vscode.window.activeTextEditor.document.fileName;
 	});
 	client.onNotification("noita/paths", (v: string[]) => {
