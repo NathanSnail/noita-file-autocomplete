@@ -239,6 +239,26 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 				}
 			});
 		}
+		if(bad)
+		{
+			const c = match[0].slice(1,-1);
+			let path;
+			if (c.charAt(0) == "m")
+			{
+				path = modPath;
+			}
+			else
+			{
+				path = dataPath;
+			}
+			path += "/" + c.split("/").slice(1).join("/");
+			if(fs.existsSync(path))
+			{
+				known_paths.push("\"" + c + "\"");
+				continue;
+			}
+			
+		}
 		const diagnostic: Diagnostic = {
 			severity: bad ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
 			range: {
