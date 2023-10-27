@@ -77,7 +77,7 @@ export function activate(context: ExtensionContext) {
 				done = path.slice(path.indexOf("mods"));
 			}
 			else {
-				done = path.slice(path.indexOf("data"));
+				done = path.slice(path.lastIndexOf("data/"));
 			}
 			vscode.env.clipboard.writeText(done);
 		}
